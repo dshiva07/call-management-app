@@ -39,6 +39,34 @@
             opacity: 0.9;
         }
 
+        .notification-banner {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            color: #856404;
+        }
+
+        .notification-banner.show {
+            display: flex;
+        }
+
+        .notification-banner.success {
+            background: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+        }
+
+        .notification-banner.error {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+
         .main-content {
             display: grid;
             grid-template-columns: 1fr 2fr;
@@ -80,7 +108,8 @@
         input[type="date"],
         input[type="time"],
         textarea,
-        select {
+        select,
+        input[type="number"] {
             width: 100%;
             padding: 10px;
             border: 2px solid #ddd;
@@ -101,6 +130,46 @@
         textarea {
             resize: vertical;
             min-height: 80px;
+        }
+
+        .reminder-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .reminder-section h3 {
+            color: #333;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .reminder-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .reminder-option input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+        }
+
+        .reminder-option label {
+            margin-bottom: 0;
+            flex: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
         .button-group {
@@ -212,11 +281,28 @@
             padding: 15px;
             border-radius: 5px;
             transition: all 0.3s;
+            position: relative;
+        }
+
+        .call-card.has-reminder {
+            border-left-color: #17a2b8;
         }
 
         .call-card:hover {
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
             transform: translateX(5px);
+        }
+
+        .reminder-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #17a2b8;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
         }
 
         .call-header {
@@ -273,6 +359,16 @@
             min-width: 100px;
         }
 
+        .reminder-info {
+            background: #e7f3ff;
+            border-left: 3px solid #17a2b8;
+            padding: 8px 10px;
+            border-radius: 3px;
+            margin: 8px 0;
+            font-size: 0.9em;
+            color: #004085;
+        }
+
         .call-actions {
             display: flex;
             gap: 8px;
@@ -324,6 +420,24 @@
 
         .btn-reschedule:hover {
             background: #e0a800;
+        }
+
+        .btn-reminder {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-reminder:hover {
+            background: #138496;
+        }
+
+        .btn-calendar {
+            background: #6f42c1;
+            color: white;
+        }
+
+        .btn-calendar:hover {
+            background: #5a32a3;
         }
 
         .modal {
@@ -391,6 +505,17 @@
             background: #138496;
         }
 
+        .btn-add-calendar {
+            background: #6f42c1;
+            color: white;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn-add-calendar:hover {
+            background: #5a32a3;
+        }
+
         .empty-state {
             text-align: center;
             padding: 40px 20px;
@@ -445,6 +570,16 @@
             color: #999;
             font-size: 1.1em;
         }
+
+        .time-input-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .time-input-group input {
+            width: 100%;
+        }
     </style>
 </head>
 <body>
@@ -453,6 +588,11 @@
             <h1>📞 Call Tracker</h1>
             <p>Manage and track multiple calls throughout your day</p>
         </header>
+
+        <div id="notificationBanner" class="notification-banner">
+            <span id="notificationText"></span>
+            <button onclick="closeNotification()" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font-size: 1.2em;">✕</button>
+        </div>
 
         <div class="main-content">
             <!-- Add Call Form -->
@@ -494,6 +634,31 @@
                         <textarea id="notes" placeholder="Add any additional notes..."></textarea>
                     </div>
 
+                    <!-- Reminder Section -->
+                    <div class="reminder-section">
+                        <h3>🔔 Set Reminders</h3>
+                        
+                        <div class="form-group">
+                            <label for="reminderMinutes">Reminder Before Call (minutes) *</label>
+                            <input type="number" id="reminderMinutes" min="5" max="1440" step="5" value="15" placeholder="15">
+                        </div>
+
+                        <div class="reminder-option">
+                            <input type="checkbox" id="emailReminder" checked>
+                            <label for="emailReminder">📧 Email Reminder</label>
+                        </div>
+
+                        <div class="reminder-option">
+                            <input type="checkbox" id="phoneReminder" checked>
+                            <label for="phoneReminder">📱 Phone Reminder</label>
+                        </div>
+
+                        <div class="reminder-option">
+                            <input type="checkbox" id="addToCalendar" checked>
+                            <label for="addToCalendar">📅 Add to Calendar</label>
+                        </div>
+                    </div>
+
                     <div class="button-group">
                         <button type="submit" class="btn-add">Add Call</button>
                         <button type="reset" class="btn-clear">Clear</button>
@@ -502,6 +667,7 @@
 
                 <div class="export-section">
                     <button class="btn-export" onclick="exportToCSV()">📥 Export to CSV</button>
+                    <button class="btn-add-calendar" onclick="exportToICS()">📅 Export Calendar (.ics)</button>
                 </div>
             </div>
 
@@ -602,9 +768,73 @@
                     <label for="editNotes">Additional Notes</label>
                     <textarea id="editNotes"></textarea>
                 </div>
+
+                <!-- Edit Reminder Section -->
+                <div class="reminder-section">
+                    <h3>🔔 Reminder Settings</h3>
+                    
+                    <div class="form-group">
+                        <label for="editReminderMinutes">Reminder Before Call (minutes)</label>
+                        <input type="number" id="editReminderMinutes" min="5" max="1440" step="5">
+                    </div>
+
+                    <div class="reminder-option">
+                        <input type="checkbox" id="editEmailReminder">
+                        <label for="editEmailReminder">📧 Email Reminder</label>
+                    </div>
+
+                    <div class="reminder-option">
+                        <input type="checkbox" id="editPhoneReminder">
+                        <label for="editPhoneReminder">📱 Phone Reminder</label>
+                    </div>
+
+                    <div class="reminder-option">
+                        <input type="checkbox" id="editAddToCalendar">
+                        <label for="editAddToCalendar">📅 Add to Calendar</label>
+                    </div>
+                </div>
+
                 <div class="button-group">
                     <button type="submit" class="btn-add">Update Call</button>
                     <button type="button" class="btn-clear" onclick="closeEditModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Reminder Modal -->
+    <div id="reminderModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeReminderModal()">&times;</span>
+            <div class="modal-header">Configure Reminders</div>
+            <form id="reminderForm">
+                <div class="form-group">
+                    <label for="remindMinutes">Minutes Before Call *</label>
+                    <input type="number" id="remindMinutes" min="5" max="1440" step="5" value="15" required>
+                </div>
+
+                <div class="reminder-option">
+                    <input type="checkbox" id="remindEmail" checked>
+                    <label for="remindEmail">📧 Send Email Reminder</label>
+                </div>
+
+                <div class="reminder-option">
+                    <input type="checkbox" id="remindPhone" checked>
+                    <label for="remindPhone">📱 Send SMS/Phone Reminder</label>
+                </div>
+
+                <div class="reminder-option">
+                    <input type="checkbox" id="remindCalendar" checked>
+                    <label for="remindCalendar">📅 Add to Calendar</label>
+                </div>
+
+                <div class="form-group" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; font-size: 0.9em; color: #666;">
+                    <strong>Note:</strong> Email and SMS reminders require integration with your email/SMS service. Calendar events are stored locally and can be exported.
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="btn-add">Save Reminders</button>
+                    <button type="button" class="btn-clear" onclick="closeReminderModal()">Cancel</button>
                 </div>
             </form>
         </div>
@@ -615,12 +845,16 @@
         let currentFilter = 'all';
         let currentEditId = null;
         let currentRescheduleId = null;
+        let currentReminderId = null;
 
         // Load data from localStorage on page load
         window.addEventListener('load', () => {
             loadFromLocalStorage();
             renderCalls();
             setTodayDate();
+            checkUpcomingReminders();
+            // Check for reminders every minute
+            setInterval(checkUpcomingReminders, 60000);
         });
 
         // Set today's date as default
@@ -629,6 +863,19 @@
             document.getElementById('callDate').value = today;
             document.getElementById('rescheduleDate').value = today;
             document.getElementById('editCallDate').value = today;
+        }
+
+        // Show notification banner
+        function showNotification(message, type = 'info') {
+            const banner = document.getElementById('notificationBanner');
+            const text = document.getElementById('notificationText');
+            text.textContent = message;
+            banner.className = `notification-banner show ${type}`;
+            setTimeout(closeNotification, 5000);
+        }
+
+        function closeNotification() {
+            document.getElementById('notificationBanner').classList.remove('show');
         }
 
         // Add new call
@@ -647,7 +894,13 @@
                 status: 'pending',
                 createdAt: new Date().toISOString(),
                 rescheduledFrom: null,
-                rescheduledReason: null
+                rescheduledReason: null,
+                // Reminder settings
+                reminderMinutes: parseInt(document.getElementById('reminderMinutes').value) || 15,
+                emailReminder: document.getElementById('emailReminder').checked,
+                phoneReminder: document.getElementById('phoneReminder').checked,
+                addToCalendar: document.getElementById('addToCalendar').checked,
+                reminderSent: false
             };
 
             calls.push(newCall);
@@ -655,6 +908,11 @@
             renderCalls();
             document.getElementById('callForm').reset();
             setTodayDate();
+            document.getElementById('reminderMinutes').value = '15';
+            document.getElementById('emailReminder').checked = true;
+            document.getElementById('phoneReminder').checked = true;
+            document.getElementById('addToCalendar').checked = true;
+            showNotification('✅ Call added successfully!', 'success');
         });
 
         // Reschedule form submit
@@ -675,7 +933,12 @@
                     status: 'rescheduled',
                     createdAt: callToReschedule.createdAt,
                     rescheduledFrom: currentRescheduleId,
-                    rescheduledReason: document.getElementById('rescheduleReason').value
+                    rescheduledReason: document.getElementById('rescheduleReason').value,
+                    reminderMinutes: callToReschedule.reminderMinutes,
+                    emailReminder: callToReschedule.emailReminder,
+                    phoneReminder: callToReschedule.phoneReminder,
+                    addToCalendar: callToReschedule.addToCalendar,
+                    reminderSent: false
                 };
 
                 callToReschedule.status = 'rescheduled';
@@ -683,6 +946,7 @@
                 saveToLocalStorage();
                 renderCalls();
                 closeRescheduleModal();
+                showNotification('🔄 Call rescheduled successfully!', 'success');
             }
         });
 
@@ -699,10 +963,35 @@
                 callToEdit.time = document.getElementById('editCallTime').value;
                 callToEdit.purpose = document.getElementById('editPurpose').value;
                 callToEdit.notes = document.getElementById('editNotes').value;
+                callToEdit.reminderMinutes = parseInt(document.getElementById('editReminderMinutes').value) || 15;
+                callToEdit.emailReminder = document.getElementById('editEmailReminder').checked;
+                callToEdit.phoneReminder = document.getElementById('editPhoneReminder').checked;
+                callToEdit.addToCalendar = document.getElementById('editAddToCalendar').checked;
+                callToEdit.reminderSent = false;
 
                 saveToLocalStorage();
                 renderCalls();
                 closeEditModal();
+                showNotification('✏️ Call updated successfully!', 'success');
+            }
+        });
+
+        // Reminder form submit
+        document.getElementById('reminderForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const callToRemind = calls.find(c => c.id === currentReminderId);
+            if (callToRemind) {
+                callToRemind.reminderMinutes = parseInt(document.getElementById('remindMinutes').value) || 15;
+                callToRemind.emailReminder = document.getElementById('remindEmail').checked;
+                callToRemind.phoneReminder = document.getElementById('remindPhone').checked;
+                callToRemind.addToCalendar = document.getElementById('remindCalendar').checked;
+                callToRemind.reminderSent = false;
+
+                saveToLocalStorage();
+                renderCalls();
+                closeReminderModal();
+                showNotification('🔔 Reminder settings updated!', 'success');
             }
         });
 
@@ -711,8 +1000,10 @@
             const call = calls.find(c => c.id === id);
             if (call) {
                 call.status = 'completed';
+                call.reminderSent = true;
                 saveToLocalStorage();
                 renderCalls();
+                showNotification('✅ Call marked as completed!', 'success');
             }
         }
 
@@ -722,6 +1013,7 @@
                 calls = calls.filter(c => c.id !== id);
                 saveToLocalStorage();
                 renderCalls();
+                showNotification('🗑️ Call deleted successfully!', 'success');
             }
         }
 
@@ -751,6 +1043,10 @@
                 document.getElementById('editCallTime').value = call.time;
                 document.getElementById('editPurpose').value = call.purpose;
                 document.getElementById('editNotes').value = call.notes;
+                document.getElementById('editReminderMinutes').value = call.reminderMinutes || 15;
+                document.getElementById('editEmailReminder').checked = call.emailReminder !== false;
+                document.getElementById('editPhoneReminder').checked = call.phoneReminder !== false;
+                document.getElementById('editAddToCalendar').checked = call.addToCalendar !== false;
                 document.getElementById('editModal').classList.add('active');
             }
         }
@@ -760,6 +1056,79 @@
             document.getElementById('editModal').classList.remove('active');
             document.getElementById('editForm').reset();
             currentEditId = null;
+        }
+
+        // Open reminder modal
+        function openReminderModal(id) {
+            currentReminderId = id;
+            const call = calls.find(c => c.id === id);
+            if (call) {
+                document.getElementById('remindMinutes').value = call.reminderMinutes || 15;
+                document.getElementById('remindEmail').checked = call.emailReminder !== false;
+                document.getElementById('remindPhone').checked = call.phoneReminder !== false;
+                document.getElementById('remindCalendar').checked = call.addToCalendar !== false;
+                document.getElementById('reminderModal').classList.add('active');
+            }
+        }
+
+        // Close reminder modal
+        function closeReminderModal() {
+            document.getElementById('reminderModal').classList.remove('active');
+            document.getElementById('reminderForm').reset();
+            currentReminderId = null;
+        }
+
+        // Check for upcoming reminders
+        function checkUpcomingReminders() {
+            const now = new Date();
+            calls.forEach(call => {
+                if (call.status !== 'completed' && !call.reminderSent) {
+                    const callDateTime = new Date(call.date + 'T' + call.time);
+                    const reminderTime = new Date(callDateTime.getTime() - (call.reminderMinutes || 15) * 60000);
+                    
+                    // Check if reminder time has passed (within 2 minutes window)
+                    if (now >= reminderTime && now <= new Date(reminderTime.getTime() + 120000)) {
+                        triggerReminder(call);
+                        call.reminderSent = true;
+                        saveToLocalStorage();
+                    }
+                }
+            });
+        }
+
+        // Trigger reminder notification
+        function triggerReminder(call) {
+            const reminderMessage = `Reminder: Call with ${call.name} scheduled in ${call.reminderMinutes} minutes`;
+            
+            // Browser notification
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('Call Reminder 📞', {
+                    body: reminderMessage,
+                    icon: '📞'
+                });
+            }
+            
+            // Show in-app notification
+            showNotification(`🔔 ${reminderMessage}`, 'success');
+
+            // Simulate Email Reminder
+            if (call.emailReminder && call.email) {
+                console.log(`📧 Email reminder sent to ${call.email}: ${reminderMessage}`);
+                // In production, this would call a backend API
+            }
+
+            // Simulate Phone/SMS Reminder
+            if (call.phoneReminder && call.phone) {
+                console.log(`📱 SMS reminder sent to ${call.phone}: ${reminderMessage}`);
+                // In production, this would call a backend API (Twilio, etc.)
+            }
+        }
+
+        // Request notification permission
+        function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
         }
 
         // Filter calls
@@ -804,8 +1173,12 @@
             if (filteredCalls.length === 0) {
                 callsList.innerHTML = '<div class="no-results">No calls found. Add a new call to get started!</div>';
             } else {
-                callsList.innerHTML = filteredCalls.map(call => `
-                    <div class="call-card">
+                callsList.innerHTML = filteredCalls.map(call => {
+                    const hasReminder = call.emailReminder || call.phoneReminder || call.addToCalendar;
+                    const reminderDisplay = call.reminderMinutes ? `${call.reminderMinutes} min before` : '';
+                    return `
+                    <div class="call-card ${hasReminder ? 'has-reminder' : ''}">
+                        ${hasReminder ? `<div class="reminder-badge">🔔 Reminder Set</div>` : ''}
                         <div class="call-header">
                             <div class="call-name">${escapeHtml(call.name)}</div>
                             <span class="call-status status-${call.status}">${call.status.toUpperCase()}</span>
@@ -817,18 +1190,79 @@
                             <div class="call-detail-item"><span class="call-detail-label">📝 Purpose:</span>${escapeHtml(call.purpose)}</div>
                             ${call.notes ? `<div class="call-detail-item"><span class="call-detail-label">📌 Notes:</span>${escapeHtml(call.notes)}</div>` : ''}
                             ${call.rescheduledReason ? `<div class="call-detail-item"><span class="call-detail-label">🔄 Reason:</span>${escapeHtml(call.rescheduledReason)}</div>` : ''}
+                            ${hasReminder && reminderDisplay ? `<div class="reminder-info">🔔 Reminder: ${reminderDisplay}</div>` : ''}
                         </div>
                         <div class="call-actions">
+                            <button class="btn-small btn-reminder" onclick="openReminderModal(${call.id})">🔔 Reminder</button>
+                            <button class="btn-small btn-calendar" onclick="downloadCalendarEvent(${call.id})">📅 Calendar</button>
                             <button class="btn-small btn-edit" onclick="openEditModal(${call.id})">✏️ Edit</button>
                             ${call.status !== 'completed' ? `<button class="btn-small btn-complete" onclick="completeCall(${call.id})">✅ Complete</button>` : ''}
                             ${call.status !== 'completed' && call.status !== 'rescheduled' ? `<button class="btn-small btn-reschedule" onclick="openRescheduleModal(${call.id})">🔄 Reschedule</button>` : ''}
                             <button class="btn-small btn-delete" onclick="deleteCall(${call.id})">🗑️ Delete</button>
                         </div>
                     </div>
-                `).join('');
+                `;
+                }).join('');
             }
 
             updateStats();
+        }
+
+        // Download individual calendar event
+        function downloadCalendarEvent(id) {
+            const call = calls.find(c => c.id === id);
+            if (!call) return;
+
+            const icsContent = generateICS(call);
+            const blob = new Blob([icsContent], { type: 'text/calendar' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `call-${call.name.replace(/\s+/g, '-').toLowerCase()}-${call.date}.ics`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            showNotification('📅 Calendar event downloaded!', 'success');
+        }
+
+        // Generate ICS content for a single call
+        function generateICS(call) {
+            const eventStart = formatICSDateTime(call.date, call.time);
+            const eventEnd = new Date(new Date(call.date + 'T' + call.time).getTime() + 60 * 60000);
+            const eventEndStr = formatICSDateTime(
+                eventEnd.toISOString().split('T')[0],
+                eventEnd.toTimeString().slice(0, 5)
+            );
+
+            const reminderMinutes = call.reminderMinutes || 15;
+            const description = `Purpose: ${call.purpose}${call.notes ? `\\nNotes: ${call.notes}` : ''}${call.phone ? `\\nPhone: ${call.phone}` : ''}${call.email ? `\\nEmail: ${call.email}` : ''}`;
+
+            return `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Call Tracker//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:call-${call.id}@calltracker.local
+DTSTAMP:${formatICSDateTime(new Date().toISOString().split('T')[0], new Date().toTimeString().slice(0, 5))}
+DTSTART:${eventStart}
+DTEND:${eventEndStr}
+SUMMARY:Call with ${call.name}
+DESCRIPTION:${description}
+LOCATION:Phone Call
+BEGIN:VALARM
+TRIGGER:-PT${reminderMinutes}M
+ACTION:DISPLAY
+DESCRIPTION:Call Reminder
+END:VALARM
+END:VEVENT
+END:VCALENDAR`;
+        }
+
+        // Format date/time for ICS format
+        function formatICSDateTime(date, time) {
+            const dateStr = date.replace(/-/g, '');
+            const timeStr = time.replace(/:/g, '');
+            return `${dateStr}T${timeStr}00`;
         }
 
         // Update statistics
@@ -874,11 +1308,11 @@
         // Export to CSV
         function exportToCSV() {
             if (calls.length === 0) {
-                alert('No calls to export!');
+                showNotification('No calls to export!', 'error');
                 return;
             }
 
-            let csv = 'Name,Phone,Email,Date,Time,Purpose,Notes,Status,Created At\n';
+            let csv = 'Name,Phone,Email,Date,Time,Purpose,Notes,Status,Created At,Reminder Minutes,Email Reminder,Phone Reminder\n';
             calls.forEach(call => {
                 const row = [
                     `"${call.name.replace(/"/g, '""')}"`,
@@ -889,7 +1323,10 @@
                     `"${call.purpose.replace(/"/g, '""')}"`,
                     `"${call.notes.replace(/"/g, '""')}"`,
                     call.status,
-                    new Date(call.createdAt).toLocaleString()
+                    new Date(call.createdAt).toLocaleString(),
+                    call.reminderMinutes || 15,
+                    call.emailReminder ? 'Yes' : 'No',
+                    call.phoneReminder ? 'Yes' : 'No'
                 ];
                 csv += row.join(',') + '\n';
             });
@@ -901,12 +1338,71 @@
             a.download = `call-tracker-${new Date().toISOString().split('T')[0]}.csv`;
             a.click();
             window.URL.revokeObjectURL(url);
+            showNotification('📥 CSV exported successfully!', 'success');
+        }
+
+        // Export all calls to ICS calendar format
+        function exportToICS() {
+            if (calls.length === 0) {
+                showNotification('No calls to export!', 'error');
+                return;
+            }
+
+            let icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Call Tracker//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Call Tracker
+X-WR-TIMEZONE:UTC
+`;
+
+            calls.forEach(call => {
+                const eventStart = formatICSDateTime(call.date, call.time);
+                const eventEnd = new Date(new Date(call.date + 'T' + call.time).getTime() + 60 * 60000);
+                const eventEndStr = formatICSDateTime(
+                    eventEnd.toISOString().split('T')[0],
+                    eventEnd.toTimeString().slice(0, 5)
+                );
+
+                const reminderMinutes = call.reminderMinutes || 15;
+                const description = `Purpose: ${call.purpose}${call.notes ? `\\nNotes: ${call.notes}` : ''}${call.phone ? `\\nPhone: ${call.phone}` : ''}${call.email ? `\\nEmail: ${call.email}` : ''}`;
+
+                icsContent += `BEGIN:VEVENT
+UID:call-${call.id}@calltracker.local
+DTSTAMP:${formatICSDateTime(new Date().toISOString().split('T')[0], new Date().toTimeString().slice(0, 5))}
+DTSTART:${eventStart}
+DTEND:${eventEndStr}
+SUMMARY:Call with ${call.name}
+DESCRIPTION:${description}
+LOCATION:Phone Call
+STATUS:${call.status === 'completed' ? 'CONFIRMED' : 'TENTATIVE'}
+BEGIN:VALARM
+TRIGGER:-PT${reminderMinutes}M
+ACTION:DISPLAY
+DESCRIPTION:Call Reminder
+END:VALARM
+END:VEVENT
+`;
+            });
+
+            icsContent += `END:VCALENDAR`;
+
+            const blob = new Blob([icsContent], { type: 'text/calendar' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `call-tracker-${new Date().toISOString().split('T')[0]}.ics`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            showNotification('📅 Calendar file exported successfully!', 'success');
         }
 
         // Close modals when clicking outside
         window.addEventListener('click', (e) => {
             const rescheduleModal = document.getElementById('rescheduleModal');
             const editModal = document.getElementById('editModal');
+            const reminderModal = document.getElementById('reminderModal');
 
             if (e.target === rescheduleModal) {
                 closeRescheduleModal();
@@ -914,7 +1410,13 @@
             if (e.target === editModal) {
                 closeEditModal();
             }
+            if (e.target === reminderModal) {
+                closeReminderModal();
+            }
         });
+
+        // Request notification permission on load
+        window.addEventListener('load', requestNotificationPermission);
     </script>
 </body>
 </html>
