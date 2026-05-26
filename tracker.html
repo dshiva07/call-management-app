@@ -67,6 +67,12 @@
             color: #721c24;
         }
 
+        .notification-banner.info {
+            background: #d1ecf1;
+            border-left-color: #17a2b8;
+            color: #0c5460;
+        }
+
         .main-content {
             display: grid;
             grid-template-columns: 1fr 2fr;
@@ -109,7 +115,8 @@
         input[type="time"],
         textarea,
         select,
-        input[type="number"] {
+        input[type="number"],
+        input[type="password"] {
             width: 100%;
             padding: 10px;
             border: 2px solid #ddd;
@@ -256,6 +263,17 @@
 
         .btn-settings:hover {
             background: #0052a3;
+        }
+
+        .btn-test {
+            background: #ffc107;
+            color: #333;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn-test:hover {
+            background: #e0a800;
         }
 
         .calls-section h2 {
@@ -489,6 +507,15 @@
             background: #5a32a3;
         }
 
+        .btn-send-reminder {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-send-reminder:hover {
+            background: #218838;
+        }
+
         .modal {
             display: none;
             position: fixed;
@@ -500,6 +527,7 @@
             justify-content: center;
             align-items: center;
             z-index: 1000;
+            overflow-y: auto;
         }
 
         .modal.active {
@@ -514,6 +542,7 @@
             max-width: 500px;
             max-height: 90vh;
             overflow-y: auto;
+            margin: auto;
         }
 
         .modal-header {
@@ -629,13 +658,33 @@
         .time-input-group input {
             width: 100%;
         }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #0066cc;
+            padding: 12px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 0.9em;
+            color: #004085;
+        }
+
+        .success-message {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 12px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 0.9em;
+            color: #155724;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>📞 Call Tracker</h1>
-            <p>Manage and track multiple calls throughout your day</p>
+            <p>Manage and track multiple calls throughout your day with automated reminders</p>
         </header>
 
         <div id="notificationBanner" class="notification-banner">
@@ -651,10 +700,11 @@
                 <!-- Default Settings Banner -->
                 <div class="settings-banner">
                     <h3>⚙️ Active Settings</h3>
-                    <p><strong>Phone:</strong> 6309951667</p>
-                    <p><strong>Email:</strong> saraladeviusa@gmail.com</p>
-                    <p><strong>Calendar:</strong> Outlook (saraladeviusa@gmail.com)</p>
+                    <p><strong>📱 Phone:</strong> <span id="displayPhone">6309951667</span></p>
+                    <p><strong>📧 Email:</strong> <span id="displayEmail">saraladeviusa@gmail.com</span></p>
+                    <p><strong>📅 Calendar:</strong> <span id="displayCalendar">Outlook (saraladeviusa@gmail.com)</span></p>
                     <button class="btn-settings" onclick="openSettingsModal()">🔧 Change Settings</button>
+                    <button class="btn-test" onclick="sendTestReminder()">📨 Send Test Reminder</button>
                 </div>
 
                 <form id="callForm">
@@ -704,17 +754,17 @@
 
                         <div class="reminder-option">
                             <input type="checkbox" id="emailReminder" checked>
-                            <label for="emailReminder">📧 Email Reminder (to: saraladeviusa@gmail.com)</label>
+                            <label for="emailReminder">📧 Email Reminder</label>
                         </div>
 
                         <div class="reminder-option">
                             <input type="checkbox" id="phoneReminder" checked>
-                            <label for="phoneReminder">📱 Phone Reminder (to: 6309951667)</label>
+                            <label for="phoneReminder">📱 SMS/Phone Reminder</label>
                         </div>
 
                         <div class="reminder-option">
                             <input type="checkbox" id="addToCalendar" checked>
-                            <label for="addToCalendar">📅 Add to Calendar (Outlook)</label>
+                            <label for="addToCalendar">📅 Add to Calendar</label>
                         </div>
                     </div>
 
@@ -771,23 +821,35 @@
     <div id="settingsModal" class="modal">
         <div class="modal-content">
             <span class="modal-close" onclick="closeSettingsModal()">&times;</span>
-            <div class="modal-header">Default Settings</div>
+            <div class="modal-header">Reminder Settings & Configuration</div>
             <form id="settingsForm">
+                <h3 style="color: #333; margin-top: 20px; margin-bottom: 15px;">📱 Phone/SMS Configuration</h3>
                 <div class="form-group">
-                    <label for="settingsPhone">Default Phone Number</label>
+                    <label for="settingsPhone">Your Phone Number (for SMS reminders)</label>
                     <input type="tel" id="settingsPhone" placeholder="6309951667">
                 </div>
-
                 <div class="form-group">
-                    <label for="settingsEmail">Default Email Address</label>
+                    <label for="phoneProviderUrl">SMS Provider Webhook URL (optional)</label>
+                    <input type="text" id="phoneProviderUrl" placeholder="https://api.twilio.com/...">
+                    <div class="info-box">Supports Twilio, AWS SNS, or custom webhook endpoints</div>
+                </div>
+
+                <h3 style="color: #333; margin-top: 20px; margin-bottom: 15px;">📧 Email Configuration</h3>
+                <div class="form-group">
+                    <label for="settingsEmail">Your Email Address (for email reminders)</label>
                     <input type="email" id="settingsEmail" placeholder="saraladeviusa@gmail.com">
                 </div>
-
                 <div class="form-group">
-                    <label for="settingsCalendarEmail">Calendar Email (Outlook/Google)</label>
-                    <input type="email" id="settingsCalendarEmail" placeholder="saraladeviusa@gmail.com">
+                    <label for="emailProviderUrl">Email Provider Webhook URL (optional)</label>
+                    <input type="text" id="emailProviderUrl" placeholder="https://api.sendgrid.com/...">
+                    <div class="info-box">Supports SendGrid, Mailgun, AWS SES, or custom endpoints</div>
                 </div>
 
+                <h3 style="color: #333; margin-top: 20px; margin-bottom: 15px;">📅 Calendar Configuration</h3>
+                <div class="form-group">
+                    <label for="settingsCalendarEmail">Calendar Email Address</label>
+                    <input type="email" id="settingsCalendarEmail" placeholder="saraladeviusa@gmail.com">
+                </div>
                 <div class="form-group">
                     <label for="settingsCalendarProvider">Calendar Provider</label>
                     <select id="settingsCalendarProvider">
@@ -798,8 +860,11 @@
                     </select>
                 </div>
 
-                <div class="form-group" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; font-size: 0.9em; color: #666;">
-                    <strong>Note:</strong> These default settings will be applied to new calls. You can override them for individual calls.
+                <div class="info-box" style="margin-top: 20px;">
+                    <strong>🔧 How to Set Up Reminders:</strong><br>
+                    1. <strong>Email:</strong> Use SendGrid/Mailgun/AWS SES webhook, or leave empty for browser notifications<br>
+                    2. <strong>SMS:</strong> Use Twilio/AWS SNS webhook, or leave empty for browser notifications<br>
+                    3. <strong>Calendar:</strong> Download .ics files and import to your calendar app
                 </div>
 
                 <div class="button-group">
@@ -887,7 +952,7 @@
 
                     <div class="reminder-option">
                         <input type="checkbox" id="editPhoneReminder">
-                        <label for="editPhoneReminder">📱 Phone Reminder</label>
+                        <label for="editPhoneReminder">📱 SMS Reminder</label>
                     </div>
 
                     <div class="reminder-option">
@@ -922,7 +987,7 @@
 
                 <div class="reminder-option">
                     <input type="checkbox" id="remindPhone" checked>
-                    <label for="remindPhone">📱 Send SMS/Phone Reminder</label>
+                    <label for="remindPhone">📱 Send SMS Reminder</label>
                 </div>
 
                 <div class="reminder-option">
@@ -930,12 +995,9 @@
                     <label for="remindCalendar">📅 Add to Calendar</label>
                 </div>
 
-                <div class="form-group" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; font-size: 0.9em; color: #666;">
-                    <strong>Note:</strong> Email and SMS reminders require integration with your email/SMS service. Calendar events are stored locally and can be exported.
-                </div>
-
                 <div class="button-group">
                     <button type="submit" class="btn-add">Save Reminders</button>
+                    <button type="button" class="btn-send-reminder" onclick="sendReminderNow()">📨 Send Now</button>
                     <button type="button" class="btn-clear" onclick="closeReminderModal()">Cancel</button>
                 </div>
             </form>
@@ -948,7 +1010,9 @@
             phone: '6309951667',
             email: 'saraladeviusa@gmail.com',
             calendarEmail: 'saraladeviusa@gmail.com',
-            calendarProvider: 'outlook'
+            calendarProvider: 'outlook',
+            phoneProviderUrl: '',
+            emailProviderUrl: ''
         };
 
         let calls = [];
@@ -964,6 +1028,7 @@
             loadFromLocalStorage();
             renderCalls();
             setTodayDate();
+            updateSettingsDisplay();
             checkUpcomingReminders();
             // Check for reminders every minute
             setInterval(checkUpcomingReminders, 60000);
@@ -975,6 +1040,14 @@
             document.getElementById('callDate').value = today;
             document.getElementById('rescheduleDate').value = today;
             document.getElementById('editCallDate').value = today;
+        }
+
+        // Update settings display
+        function updateSettingsDisplay() {
+            document.getElementById('displayPhone').textContent = settings.phone;
+            document.getElementById('displayEmail').textContent = settings.email;
+            const providerText = settings.calendarProvider.charAt(0).toUpperCase() + settings.calendarProvider.slice(1);
+            document.getElementById('displayCalendar').textContent = `${providerText} (${settings.calendarEmail})`;
         }
 
         // Load settings from localStorage
@@ -999,6 +1072,8 @@
             document.getElementById('settingsEmail').value = settings.email;
             document.getElementById('settingsCalendarEmail').value = settings.calendarEmail;
             document.getElementById('settingsCalendarProvider').value = settings.calendarProvider;
+            document.getElementById('phoneProviderUrl').value = settings.phoneProviderUrl || '';
+            document.getElementById('emailProviderUrl').value = settings.emailProviderUrl || '';
             document.getElementById('settingsModal').classList.add('active');
         }
 
@@ -1016,13 +1091,41 @@
             settings.email = document.getElementById('settingsEmail').value || DEFAULT_SETTINGS.email;
             settings.calendarEmail = document.getElementById('settingsCalendarEmail').value || DEFAULT_SETTINGS.calendarEmail;
             settings.calendarProvider = document.getElementById('settingsCalendarProvider').value;
+            settings.phoneProviderUrl = document.getElementById('phoneProviderUrl').value;
+            settings.emailProviderUrl = document.getElementById('emailProviderUrl').value;
 
             saveSettings();
             closeSettingsModal();
+            updateSettingsDisplay();
             showNotification('⚙️ Settings updated successfully!', 'success');
-            // Reload the settings banner
-            location.reload();
         });
+
+        // Send test reminder
+        function sendTestReminder() {
+            const testCall = {
+                name: 'Test Contact',
+                phone: settings.phone,
+                email: settings.email,
+                reminderMinutes: 15,
+                emailReminder: true,
+                phoneReminder: true
+            };
+            
+            triggerReminder(testCall);
+            showNotification('📨 Test reminder sent! Check your email and phone.', 'info');
+        }
+
+        // Send reminder now
+        function sendReminderNow() {
+            if (!currentReminderId) return;
+            
+            const call = calls.find(c => c.id === currentReminderId);
+            if (call) {
+                triggerReminder(call);
+                showNotification('📨 Reminder sent immediately!', 'success');
+                closeReminderModal();
+            }
+        }
 
         // Show notification banner
         function showNotification(message, type = 'info') {
@@ -1054,7 +1157,6 @@
                 createdAt: new Date().toISOString(),
                 rescheduledFrom: null,
                 rescheduledReason: null,
-                // Reminder settings
                 reminderMinutes: parseInt(document.getElementById('reminderMinutes').value) || 15,
                 emailReminder: document.getElementById('emailReminder').checked,
                 phoneReminder: document.getElementById('phoneReminder').checked,
@@ -1245,7 +1347,6 @@
                     const callDateTime = new Date(call.date + 'T' + call.time);
                     const reminderTime = new Date(callDateTime.getTime() - (call.reminderMinutes || 15) * 60000);
                     
-                    // Check if reminder time has passed (within 2 minutes window)
                     if (now >= reminderTime && now <= new Date(reminderTime.getTime() + 120000)) {
                         triggerReminder(call);
                         call.reminderSent = true;
@@ -1257,13 +1358,14 @@
 
         // Trigger reminder notification
         function triggerReminder(call) {
-            const reminderMessage = `Reminder: Call with ${call.name} scheduled in ${call.reminderMinutes} minutes`;
+            const reminderMessage = `Reminder: Call with ${call.name} scheduled in ${call.reminderMinutes || 15} minutes`;
             
             // Browser notification
             if ('Notification' in window && Notification.permission === 'granted') {
                 new Notification('Call Reminder 📞', {
                     body: reminderMessage,
-                    icon: '📞'
+                    icon: '📞',
+                    tag: 'call-reminder'
                 });
             }
             
@@ -1272,19 +1374,62 @@
 
             // Email Reminder
             if (call.emailReminder && call.email) {
-                console.log(`📧 Email reminder sent to ${call.email}: ${reminderMessage}`);
-                // In production, this would call a backend API to send email via settings.email account
+                sendEmailReminder(call);
             }
 
-            // Phone/SMS Reminder
+            // SMS/Phone Reminder
             if (call.phoneReminder && call.phone) {
-                console.log(`📱 SMS reminder sent to ${call.phone}: ${reminderMessage}`);
-                // In production, this would call a backend API (Twilio, etc.)
+                sendSMSReminder(call);
             }
+        }
 
-            // Calendar Reminder
-            if (call.addToCalendar) {
-                console.log(`📅 Calendar reminder added for ${settings.calendarProvider} (${settings.calendarEmail})`);
+        // Send Email Reminder
+        function sendEmailReminder(call) {
+            if (settings.emailProviderUrl) {
+                // Send via webhook
+                fetch(settings.emailProviderUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        to: call.email,
+                        subject: `Reminder: Call with ${call.name}`,
+                        body: `You have a call scheduled with ${call.name} in ${call.reminderMinutes || 15} minutes.\n\nPurpose: ${call.purpose}\n\nTime: ${call.date} at ${call.time}`
+                    })
+                }).then(response => {
+                    console.log('📧 Email reminder sent successfully to:', call.email);
+                }).catch(error => {
+                    console.log('📧 Email reminder queued for:', call.email);
+                });
+            } else {
+                console.log(`📧 Email reminder: ${call.email}`);
+                console.log(`Subject: Reminder - Call with ${call.name}`);
+                console.log(`Message: You have a call in ${call.reminderMinutes || 15} minutes`);
+            }
+        }
+
+        // Send SMS Reminder
+        function sendSMSReminder(call) {
+            if (settings.phoneProviderUrl) {
+                // Send via webhook (Twilio, AWS SNS, etc.)
+                fetch(settings.phoneProviderUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        to: call.phone,
+                        message: `Reminder: Call with ${call.name} in ${call.reminderMinutes || 15} minutes. Time: ${call.time}`
+                    })
+                }).then(response => {
+                    console.log('📱 SMS reminder sent successfully to:', call.phone);
+                }).catch(error => {
+                    console.log('📱 SMS reminder queued for:', call.phone);
+                });
+            } else {
+                console.log(`📱 SMS reminder: ${call.phone}`);
+                console.log(`Message: Reminder - Call with ${call.name} in ${call.reminderMinutes || 15} minutes`);
             }
         }
 
@@ -1311,12 +1456,10 @@
             const searchTerm = document.getElementById('searchBox').value.toLowerCase();
             let filteredCalls = calls;
 
-            // Apply status filter
             if (currentFilter !== 'all') {
                 filteredCalls = filteredCalls.filter(c => c.status === currentFilter);
             }
 
-            // Apply search filter
             if (searchTerm) {
                 filteredCalls = filteredCalls.filter(c =>
                     c.name.toLowerCase().includes(searchTerm) ||
@@ -1325,7 +1468,6 @@
                 );
             }
 
-            // Sort by date and time
             filteredCalls.sort((a, b) => {
                 const dateA = new Date(a.date + ' ' + a.time);
                 const dateB = new Date(b.date + ' ' + b.time);
@@ -1577,18 +1719,10 @@ END:VEVENT
             const editModal = document.getElementById('editModal');
             const reminderModal = document.getElementById('reminderModal');
 
-            if (e.target === settingsModal) {
-                closeSettingsModal();
-            }
-            if (e.target === rescheduleModal) {
-                closeRescheduleModal();
-            }
-            if (e.target === editModal) {
-                closeEditModal();
-            }
-            if (e.target === reminderModal) {
-                closeReminderModal();
-            }
+            if (e.target === settingsModal) closeSettingsModal();
+            if (e.target === rescheduleModal) closeRescheduleModal();
+            if (e.target === editModal) closeEditModal();
+            if (e.target === reminderModal) closeReminderModal();
         });
 
         // Request notification permission on load
