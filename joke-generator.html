@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Joke Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px 30px;
+        }
+
+        .joke-display {
+            background: #f8f9fa;
+            border-left: 5px solid #667eea;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .joke-type {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            width: fit-content;
+            text-transform: uppercase;
+        }
+
+        .joke-text {
+            font-size: 1.2em;
+            color: #333;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .punchline {
+            font-size: 1.1em;
+            color: #667eea;
+            font-weight: 600;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid #eee;
+            display: none;
+        }
+
+        .punchline.show {
+            display: block;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .loading {
+            text-align: center;
+            color: #667eea;
+            font-size: 1.1em;
+            display: none;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 14px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            grid-column: 1 / -1;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #dee2e6;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .category-section {
+            margin-bottom: 25px;
+        }
+
+        .category-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .category-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+        }
+
+        .category-btn {
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+
+        .category-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .category-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 2px solid #eee;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .stat-number {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .favorites {
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 2px solid #eee;
+        }
+
+        .favorites-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .favorite-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            gap: 10px;
+        }
+
+        .favorite-text {
+            flex: 1;
+            color: #555;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+
+        .favorite-remove {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            white-space: nowrap;
+        }
+
+        .favorite-remove:hover {
+            background: #c82333;
+        }
+
+        .empty-favorites {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+            font-style: italic;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border: 1px solid #c3e6cb;
+            display: none;
+        }
+
+        .success.show {
+            display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .buttons {
+                grid-template-columns: 1fr;
+            }
+
+            .category-buttons {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>😂 Joke Generator</h1>
+            <p>Get a random laugh instantly</p>
+        </div>
+
+        <div class="content">
+            <!-- Success/Error Messages -->
+            <div id="successMessage" class="success"></div>
+            <div id="errorMessage" class="error" style="display: none;"></div>
+
+            <!-- Category Selection -->
+            <div class="category-section">
+                <label class="category-label">📂 Select Category:</label>
+                <div class="category-buttons">
+                    <button class="category-btn active" data-category="random">Random</button>
+                    <button class="category-btn" data-category="programming">Programming</button>
+                    <button class="category-btn" data-category="knock-knock">Knock-Knock</button>
+                    <button class="category-btn" data-category="general">General</button>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Getting a joke for you...</p>
+            </div>
+
+            <!-- Joke Display -->
+            <div class="joke-display" id="jokeDisplay" style="display: none;">
+                <span class="joke-type" id="jokeType">Random</span>
+                <div class="joke-text" id="jokeText">Click "Get Joke" to start laughing!</div>
+                <div class="punchline" id="punchline"></div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="buttons">
+                <button class="btn btn-primary" id="getJokeBtn">Get Joke 😂</button>
+                <button class="btn btn-secondary" id="showPunchlineBtn" style="display: none;">Show Punchline</button>
+                <button class="btn btn-secondary" id="addFavoriteBtn" style="display: none;">❤️ Add to Favorites</button>
+                <button class="btn btn-secondary" id="copyBtn" style="display: none;">📋 Copy Joke</button>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="jokeCount">0</div>
+                    <div class="stat-label">Jokes Fetched</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="favoriteCount">0</div>
+                    <div class="stat-label">Favorited</div>
+                </div>
+            </div>
+
+            <!-- Favorites -->
+            <div class="favorites">
+                <div class="favorites-title">⭐ Favorite Jokes</div>
+                <div id="favoritesList">
+                    <div class="empty-favorites">No favorites yet. Add one!</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Joke Generator API
+        const API_URL = 'https://official-joke-api.appspot.com';
+
+        class JokeGenerator {
+            constructor() {
+                this.currentJoke = null;
+                this.jokeCount = 0;
+                this.favorites = this.loadFavorites();
+                this.selectedCategory = 'random';
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.updateStats();
+                this.renderFavorites();
+            }
+
+            setupEventListeners() {
+                document.getElementById('getJokeBtn').addEventListener('click', () => this.getJoke());
+                document.getElementById('showPunchlineBtn').addEventListener('click', () => this.showPunchline());
+                document.getElementById('addFavoriteBtn').addEventListener('click', () => this.addToFavorites());
+                document.getElementById('copyBtn').addEventListener('click', () => this.copyJoke());
+
+                // Category buttons
+                document.querySelectorAll('.category-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                        e.target.classList.add('active');
+                        this.selectedCategory = e.target.dataset.category;
+                    });
+                });
+            }
+
+            async getJoke() {
+                const loadingEl = document.getElementById('loading');
+                const jokeDisplay = document.getElementById('jokeDisplay');
+                const btn = document.getElementById('getJokeBtn');
+
+                loadingEl.style.display = 'block';
+                jokeDisplay.style.display = 'none';
+                btn.disabled = true;
+
+                try {
+                    let url;
+                    if (this.selectedCategory === 'random') {
+                        url = `${API_URL}/random_joke`;
+                    } else {
+                        url = `${API_URL}/jokes/${this.selectedCategory}/random`;
+                    }
+
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error('Failed to fetch joke');
+
+                    const joke = await response.json();
+                    this.currentJoke = joke;
+                    this.jokeCount++;
+                    this.updateStats();
+                    this.displayJoke(joke);
+                    this.showSuccess('Joke loaded! 😂');
+                } catch (error) {
+                    this.showError('Failed to load joke. Please try again.');
+                    console.error('Error:', error);
+                } finally {
+                    loadingEl.style.display = 'none';
+                    btn.disabled = false;
+                }
+            }
+
+            displayJoke(joke) {
+                const jokeDisplay = document.getElementById('jokeDisplay');
+                const jokeType = document.getElementById('jokeType');
+                const jokeText = document.getElementById('jokeText');
+                const punchline = document.getElementById('punchline');
+                const showPunchlineBtn = document.getElementById('showPunchlineBtn');
+                const addFavoriteBtn = document.getElementById('addFavoriteBtn');
+                const copyBtn = document.getElementById('copyBtn');
+
+                // Determine joke type
+                const type = joke.type === 'knock-knock' ? 'Knock-Knock' : 
+                            joke.type === 'programming' ? 'Programming' : 'General';
+                jokeType.textContent = type;
+
+                if (joke.setup) {
+                    // Two-part joke
+                    jokeText.textContent = joke.setup;
+                    punchline.textContent = joke.punchline;
+                    punchline.classList.remove('show');
+                    showPunchlineBtn.style.display = 'block';
+                } else {
+                    // Single-line joke
+                    jokeText.textContent = joke.joke;
+                    punchline.classList.remove('show');
+                    showPunchlineBtn.style.display = 'none';
+                }
+
+                addFavoriteBtn.style.display = 'block';
+                copyBtn.style.display = 'block';
+                jokeDisplay.style.display = 'flex';
+            }
+
+            showPunchline() {
+                const punchline = document.getElementById('punchline');
+                punchline.classList.add('show');
+                document.getElementById('showPunchlineBtn').style.display = 'none';
+            }
+
+            addToFavorites() {
+                if (!this.currentJoke) return;
+
+                const jokeText = this.currentJoke.setup 
+                    ? `${this.currentJoke.setup}\n${this.currentJoke.punchline}`
+                    : this.currentJoke.joke;
+
+                if (this.favorites.some(j => j.text === jokeText)) {
+                    this.showError('Already in favorites!');
+                    return;
+                }
+
+                this.favorites.push({
+                    id: Date.now(),
+                    text: jokeText,
+                    type: this.currentJoke.type
+                });
+
+                this.saveFavorites();
+                this.updateStats();
+                this.renderFavorites();
+                this.showSuccess('Added to favorites! ⭐');
+            }
+
+            removeFavorite(id) {
+                this.favorites = this.favorites.filter(j => j.id !== id);
+                this.saveFavorites();
+                this.updateStats();
+                this.renderFavorites();
+                this.showSuccess('Removed from favorites');
+            }
+
+            copyJoke() {
+                if (!this.currentJoke) return;
+
+                const jokeText = this.currentJoke.setup 
+                    ? `${this.currentJoke.setup}\n${this.currentJoke.punchline}`
+                    : this.currentJoke.joke;
+
+                navigator.clipboard.writeText(jokeText).then(() => {
+                    this.showSuccess('Joke copied to clipboard! 📋');
+                }).catch(() => {
+                    this.showError('Failed to copy joke');
+                });
+            }
+
+            renderFavorites() {
+                const favoritesList = document.getElementById('favoritesList');
+
+                if (this.favorites.length === 0) {
+                    favoritesList.innerHTML = '<div class="empty-favorites">No favorites yet. Add one!</div>';
+                    return;
+                }
+
+                favoritesList.innerHTML = this.favorites.map(joke => `
+                    <div class="favorite-item">
+                        <div class="favorite-text">${joke.text.replace(/\n/g, ' → ')}</div>
+                        <button class="favorite-remove" onclick="jokeGenerator.removeFavorite(${joke.id})">Remove</button>
+                    </div>
+                `).join('');
+            }
+
+            updateStats() {
+                document.getElementById('jokeCount').textContent = this.jokeCount;
+                document.getElementById('favoriteCount').textContent = this.favorites.length;
+            }
+
+            saveFavorites() {
+                localStorage.setItem('jokeGeneratorFavorites', JSON.stringify(this.favorites));
+            }
+
+            loadFavorites() {
+                const data = localStorage.getItem('jokeGeneratorFavorites');
+                return data ? JSON.parse(data) : [];
+            }
+
+            showSuccess(message) {
+                const el = document.getElementById('successMessage');
+                el.textContent = message;
+                el.classList.add('show');
+                setTimeout(() => el.classList.remove('show'), 3000);
+            }
+
+            showError(message) {
+                const el = document.getElementById('errorMessage');
+                el.textContent = message;
+                el.style.display = 'block';
+                setTimeout(() => el.style.display = 'none', 5000);
+            }
+        }
+
+        // Initialize
+        const jokeGenerator = new JokeGenerator();
+    </script>
+</body>
+</html>
