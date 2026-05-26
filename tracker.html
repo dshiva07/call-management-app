@@ -132,6 +132,44 @@
             min-height: 80px;
         }
 
+        .settings-banner {
+            background: #e7f3ff;
+            border-left: 4px solid #0066cc;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            color: #004085;
+        }
+
+        .settings-banner h3 {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .settings-banner p {
+            font-size: 0.9em;
+            margin: 5px 0;
+        }
+
+        .settings-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #0066cc;
+        }
+
+        .settings-section h3 {
+            color: #333;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         .reminder-section {
             background: #f8f9fa;
             padding: 15px;
@@ -207,6 +245,17 @@
 
         .btn-clear:hover {
             background: #e0e0e0;
+        }
+
+        .btn-settings {
+            background: #0066cc;
+            color: white;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn-settings:hover {
+            background: #0052a3;
         }
 
         .calls-section h2 {
@@ -598,6 +647,16 @@
             <!-- Add Call Form -->
             <div class="card form-section">
                 <h2>Add New Call</h2>
+
+                <!-- Default Settings Banner -->
+                <div class="settings-banner">
+                    <h3>⚙️ Active Settings</h3>
+                    <p><strong>Phone:</strong> 6309951667</p>
+                    <p><strong>Email:</strong> saraladeviusa@gmail.com</p>
+                    <p><strong>Calendar:</strong> Outlook (saraladeviusa@gmail.com)</p>
+                    <button class="btn-settings" onclick="openSettingsModal()">🔧 Change Settings</button>
+                </div>
+
                 <form id="callForm">
                     <div class="form-group">
                         <label for="personName">Person Name *</label>
@@ -645,17 +704,17 @@
 
                         <div class="reminder-option">
                             <input type="checkbox" id="emailReminder" checked>
-                            <label for="emailReminder">📧 Email Reminder</label>
+                            <label for="emailReminder">📧 Email Reminder (to: saraladeviusa@gmail.com)</label>
                         </div>
 
                         <div class="reminder-option">
                             <input type="checkbox" id="phoneReminder" checked>
-                            <label for="phoneReminder">📱 Phone Reminder</label>
+                            <label for="phoneReminder">📱 Phone Reminder (to: 6309951667)</label>
                         </div>
 
                         <div class="reminder-option">
                             <input type="checkbox" id="addToCalendar" checked>
-                            <label for="addToCalendar">📅 Add to Calendar</label>
+                            <label for="addToCalendar">📅 Add to Calendar (Outlook)</label>
                         </div>
                     </div>
 
@@ -705,6 +764,49 @@
 
                 <div id="callsList" class="calls-list"></div>
             </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeSettingsModal()">&times;</span>
+            <div class="modal-header">Default Settings</div>
+            <form id="settingsForm">
+                <div class="form-group">
+                    <label for="settingsPhone">Default Phone Number</label>
+                    <input type="tel" id="settingsPhone" placeholder="6309951667">
+                </div>
+
+                <div class="form-group">
+                    <label for="settingsEmail">Default Email Address</label>
+                    <input type="email" id="settingsEmail" placeholder="saraladeviusa@gmail.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="settingsCalendarEmail">Calendar Email (Outlook/Google)</label>
+                    <input type="email" id="settingsCalendarEmail" placeholder="saraladeviusa@gmail.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="settingsCalendarProvider">Calendar Provider</label>
+                    <select id="settingsCalendarProvider">
+                        <option value="outlook">Outlook</option>
+                        <option value="google">Google Calendar</option>
+                        <option value="apple">Apple Calendar</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; font-size: 0.9em; color: #666;">
+                    <strong>Note:</strong> These default settings will be applied to new calls. You can override them for individual calls.
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="btn-add">Save Settings</button>
+                    <button type="button" class="btn-clear" onclick="closeSettingsModal()">Cancel</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -841,7 +943,16 @@
     </div>
 
     <script>
+        // Default Settings
+        const DEFAULT_SETTINGS = {
+            phone: '6309951667',
+            email: 'saraladeviusa@gmail.com',
+            calendarEmail: 'saraladeviusa@gmail.com',
+            calendarProvider: 'outlook'
+        };
+
         let calls = [];
+        let settings = { ...DEFAULT_SETTINGS };
         let currentFilter = 'all';
         let currentEditId = null;
         let currentRescheduleId = null;
@@ -849,6 +960,7 @@
 
         // Load data from localStorage on page load
         window.addEventListener('load', () => {
+            loadSettings();
             loadFromLocalStorage();
             renderCalls();
             setTodayDate();
@@ -864,6 +976,53 @@
             document.getElementById('rescheduleDate').value = today;
             document.getElementById('editCallDate').value = today;
         }
+
+        // Load settings from localStorage
+        function loadSettings() {
+            const savedSettings = localStorage.getItem('callTrackerSettings');
+            if (savedSettings) {
+                settings = JSON.parse(savedSettings);
+            } else {
+                settings = { ...DEFAULT_SETTINGS };
+                saveSettings();
+            }
+        }
+
+        // Save settings to localStorage
+        function saveSettings() {
+            localStorage.setItem('callTrackerSettings', JSON.stringify(settings));
+        }
+
+        // Open settings modal
+        function openSettingsModal() {
+            document.getElementById('settingsPhone').value = settings.phone;
+            document.getElementById('settingsEmail').value = settings.email;
+            document.getElementById('settingsCalendarEmail').value = settings.calendarEmail;
+            document.getElementById('settingsCalendarProvider').value = settings.calendarProvider;
+            document.getElementById('settingsModal').classList.add('active');
+        }
+
+        // Close settings modal
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').classList.remove('active');
+            document.getElementById('settingsForm').reset();
+        }
+
+        // Settings form submit
+        document.getElementById('settingsForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            settings.phone = document.getElementById('settingsPhone').value || DEFAULT_SETTINGS.phone;
+            settings.email = document.getElementById('settingsEmail').value || DEFAULT_SETTINGS.email;
+            settings.calendarEmail = document.getElementById('settingsCalendarEmail').value || DEFAULT_SETTINGS.calendarEmail;
+            settings.calendarProvider = document.getElementById('settingsCalendarProvider').value;
+
+            saveSettings();
+            closeSettingsModal();
+            showNotification('⚙️ Settings updated successfully!', 'success');
+            // Reload the settings banner
+            location.reload();
+        });
 
         // Show notification banner
         function showNotification(message, type = 'info') {
@@ -885,8 +1044,8 @@
             const newCall = {
                 id: Date.now(),
                 name: document.getElementById('personName').value,
-                phone: document.getElementById('phone').value,
-                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value || settings.phone,
+                email: document.getElementById('email').value || settings.email,
                 date: document.getElementById('callDate').value,
                 time: document.getElementById('callTime').value,
                 purpose: document.getElementById('purpose').value,
@@ -957,8 +1116,8 @@
             const callToEdit = calls.find(c => c.id === currentEditId);
             if (callToEdit) {
                 callToEdit.name = document.getElementById('editPersonName').value;
-                callToEdit.phone = document.getElementById('editPhone').value;
-                callToEdit.email = document.getElementById('editEmail').value;
+                callToEdit.phone = document.getElementById('editPhone').value || settings.phone;
+                callToEdit.email = document.getElementById('editEmail').value || settings.email;
                 callToEdit.date = document.getElementById('editCallDate').value;
                 callToEdit.time = document.getElementById('editCallTime').value;
                 callToEdit.purpose = document.getElementById('editPurpose').value;
@@ -1111,16 +1270,21 @@
             // Show in-app notification
             showNotification(`🔔 ${reminderMessage}`, 'success');
 
-            // Simulate Email Reminder
+            // Email Reminder
             if (call.emailReminder && call.email) {
                 console.log(`📧 Email reminder sent to ${call.email}: ${reminderMessage}`);
-                // In production, this would call a backend API
+                // In production, this would call a backend API to send email via settings.email account
             }
 
-            // Simulate Phone/SMS Reminder
+            // Phone/SMS Reminder
             if (call.phoneReminder && call.phone) {
                 console.log(`📱 SMS reminder sent to ${call.phone}: ${reminderMessage}`);
                 // In production, this would call a backend API (Twilio, etc.)
+            }
+
+            // Calendar Reminder
+            if (call.addToCalendar) {
+                console.log(`📅 Calendar reminder added for ${settings.calendarProvider} (${settings.calendarEmail})`);
             }
         }
 
@@ -1241,6 +1405,7 @@ VERSION:2.0
 PRODID:-//Call Tracker//EN
 CALSCALE:GREGORIAN
 METHOD:PUBLISH
+X-MICROSOFT-CDO-BUSYSTATUS:BUSY
 BEGIN:VEVENT
 UID:call-${call.id}@calltracker.local
 DTSTAMP:${formatICSDateTime(new Date().toISOString().split('T')[0], new Date().toTimeString().slice(0, 5))}
@@ -1249,10 +1414,13 @@ DTEND:${eventEndStr}
 SUMMARY:Call with ${call.name}
 DESCRIPTION:${description}
 LOCATION:Phone Call
+ORGANIZER;CN=${settings.calendarEmail}:mailto:${settings.calendarEmail}
+ATTENDEE;CN=${call.name}:mailto:${call.email || settings.email}
 BEGIN:VALARM
 TRIGGER:-PT${reminderMinutes}M
 ACTION:DISPLAY
 DESCRIPTION:Call Reminder
+SUMMARY:Reminder: Call with ${call.name}
 END:VALARM
 END:VEVENT
 END:VCALENDAR`;
@@ -1355,6 +1523,7 @@ CALSCALE:GREGORIAN
 METHOD:PUBLISH
 X-WR-CALNAME:Call Tracker
 X-WR-TIMEZONE:UTC
+X-MICROSOFT-CDO-BUSYSTATUS:BUSY
 `;
 
             calls.forEach(call => {
@@ -1376,11 +1545,14 @@ DTEND:${eventEndStr}
 SUMMARY:Call with ${call.name}
 DESCRIPTION:${description}
 LOCATION:Phone Call
+ORGANIZER;CN=${settings.calendarEmail}:mailto:${settings.calendarEmail}
+ATTENDEE;CN=${call.name}:mailto:${call.email || settings.email}
 STATUS:${call.status === 'completed' ? 'CONFIRMED' : 'TENTATIVE'}
 BEGIN:VALARM
 TRIGGER:-PT${reminderMinutes}M
 ACTION:DISPLAY
 DESCRIPTION:Call Reminder
+SUMMARY:Reminder: Call with ${call.name}
 END:VALARM
 END:VEVENT
 `;
@@ -1400,10 +1572,14 @@ END:VEVENT
 
         // Close modals when clicking outside
         window.addEventListener('click', (e) => {
+            const settingsModal = document.getElementById('settingsModal');
             const rescheduleModal = document.getElementById('rescheduleModal');
             const editModal = document.getElementById('editModal');
             const reminderModal = document.getElementById('reminderModal');
 
+            if (e.target === settingsModal) {
+                closeSettingsModal();
+            }
             if (e.target === rescheduleModal) {
                 closeRescheduleModal();
             }
